@@ -1,6 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
+#include<ctype.h>
+#include<string.h>
 struct str_t{
 	char * ptr;
 	size_t len;
@@ -20,7 +22,8 @@ enum token_type{
 	FILE_END
 };
 union token_data{
-	int num; struct str_t str; 
+	int num;
+	struct str_t str; 
 };
 struct token{
 	enum token_type type;
@@ -30,6 +33,18 @@ struct token{
 struct token next_token(FILE *fptr){
 	struct token tok;
 	int ch = fgetc(fptr);
+	if(isdigit(ch)){
+		tok.type = NUM;
+		char buf[50];
+		int buf_len = 0;
+		while(isdigit(ch)){
+			buf[buf_len++] = ch;
+			ch = fgetc(fptr);
+		}
+		buf[buf_len++] = '\0';
+		tok.data.num = atoi(buf);
+		return tok;
+	}
 	switch(ch){
 		case '(': tok.type = OPENING_PAREN; break;
 		case ')': tok.type = CLOSING_PAREN; break;
@@ -46,7 +61,10 @@ int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
 	struct token tok = next_token(fptr);
 	while(tok.type < FILE_END){
-		printf("%s\n", token_type_strings[tok.type]);
+		if(tok.type == NUM)
+			printf("%s: %d\n", token_type_strings[tok.type], tok.data.num);
+		else
+			printf("%s\n", token_type_strings[tok.type]);
 		tok = next_token(fptr);
 	}
 	fclose(fptr);

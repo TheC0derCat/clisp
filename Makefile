@@ -1,3 +1,3 @@
 main: main.c
-	gcc main.c -o clisp.out -Werror
-	./clisp.out
+	gcc main.c
+	./a.out example

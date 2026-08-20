@@ -9,7 +9,7 @@ struct str_t{
 	size_t cap;
 	bool is_slice;
 };
-const char* token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV"};
+const char* token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV","MOD","FILE_END"};
 enum token_type{
 	OPENING_PAREN,
 	CLOSING_PAREN,
@@ -19,6 +19,7 @@ enum token_type{
 	SUB,
 	MUL,
 	DIV,
+	MOD,
 	FILE_END
 };
 union token_data{
@@ -60,6 +61,7 @@ struct token next_token(FILE *fptr){
 		case '-': tok.type = SUB; break;
 		case '*': tok.type = MUL; break;
 		case '/': tok.type = DIV; break;
+		case '%': tok.type = MOD; break;
 		case EOF: tok.type = FILE_END; fclose(fptr); break;
 		default: tok = next_token(fptr);
 	}
@@ -107,6 +109,7 @@ int walk(struct astnode node){
 		case SUB: return walk(*node.branch1) - walk(*node.branch2);
 		case MUL: return walk(*node.branch1) * walk(*node.branch2);
 		case DIV: return walk(*node.branch1) / walk(*node.branch2);
+		case MOD: return walk(*node.branch1) % walk(*node.branch2);
 		default: puts("unexpected node");
 	}
 }

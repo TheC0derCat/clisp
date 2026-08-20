@@ -30,6 +30,13 @@ struct token{
 	union token_data data;
 	struct str_t origin;
 };
+void print_tok(struct token tok){
+	if(tok.type == NUM)
+		printf("%s: %d\n", token_type_strings[tok.type], tok.data.num);
+	else
+		printf("%s\n", token_type_strings[tok.type]);
+
+}
 struct token next_token(FILE *fptr){
 	struct token tok;
 	int ch = fgetc(fptr);
@@ -74,12 +81,29 @@ struct astnode parser(FILE *fptr){
 		node.branch2 = malloc(sizeof(struct astnode));
 		*node.branch1 = parser(fptr);
 		*node.branch2 = parser(fptr);
+		struct token last = next_token(fptr);
+		if(last.type != CLOSING_PAREN){
+			puts("enexpected token");
+			print_tok(last);
+			exit(0);
+		}
 	}
 	return node;
+}
+void print_ast(struct astnode node, int indentation){
+	for(int i = 0; i < indentation; i++){
+		printf("\t");
+	}
+	print_tok(node.tok);
+	if(node.branch1 != NULL){
+		print_ast(*node.branch1, indentation + 1);
+		print_ast(*node.branch2, indentation + 1);
+	}
 }
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
 	struct astnode node = parser(fptr);
+	print_ast(node, 0);
 	/*struct token tok = next_token(fptr);
 	while(tok.type < FILE_END){
 		if(tok.type == NUM)

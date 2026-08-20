@@ -69,11 +69,11 @@ struct astnode parser(FILE *fptr){
 	node.branch1 = NULL;
 	node.branch2 = NULL;
 	if(node.tok.type == OPENING_PAREN){
+		node.tok = next_token(fptr);
 		node.branch1 = malloc(sizeof(struct astnode));
 		node.branch2 = malloc(sizeof(struct astnode));
 		*node.branch1 = parser(fptr);
 		*node.branch2 = parser(fptr);
-
 	}
 	return node;
 }

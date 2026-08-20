@@ -53,7 +53,7 @@ struct token next_token(FILE *fptr){
 		case '-': tok.type = SUB; break;
 		case '*': tok.type = MUL; break;
 		case '/': tok.type = DIV; break;
-		case EOF: tok.type = FILE_END; break;
+		case EOF: tok.type = FILE_END; fclose(fptr); break;
 		default: tok = next_token(fptr);
 	}
 	return tok;
@@ -63,17 +63,30 @@ struct astnode{
 	struct astnode *branch1;
 	struct astnode *branch2;
 };
-struct astnode parser(FILE *fptr){}
+struct astnode parser(FILE *fptr){
+	struct astnode node;
+	node.tok = next_token(fptr);
+	node.branch1 = NULL;
+	node.branch2 = NULL;
+	if(node.tok.type == OPENING_PAREN){
+		node.branch1 = malloc(sizeof(struct astnode));
+		node.branch2 = malloc(sizeof(struct astnode));
+		*node.branch1 = parser(fptr);
+		*node.branch2 = parser(fptr);
+
+	}
+	return node;
+}
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
-	struct token tok = next_token(fptr);
+	struct astnode node = parser(fptr);
+	/*struct token tok = next_token(fptr);
 	while(tok.type < FILE_END){
 		if(tok.type == NUM)
 			printf("%s: %d\n", token_type_strings[tok.type], tok.data.num);
 		else
 			printf("%s\n", token_type_strings[tok.type]);
 		tok = next_token(fptr);
-	}
-	fclose(fptr);
+	}*/
 	return 0;
 }

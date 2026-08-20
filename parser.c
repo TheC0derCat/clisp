@@ -16,7 +16,7 @@ struct astnode parser(FILE *fptr){
 		*node.branch2 = parser(fptr);
 		struct token last = next_token(fptr);
 		if(last.type != CLOSING_PAREN){
-			puts("enexpected token");
+			printf("enexpected token: ");
 			print_tok(last);
 			exit(0);
 		}

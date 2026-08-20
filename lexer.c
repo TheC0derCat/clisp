@@ -22,7 +22,7 @@ struct token{
 };
 void print_tok(struct token tok){
 	if(tok.type == NUM)
-		printf("%s: %d\n", token_type_strings[tok.type], tok.data.num);
+		printf("%s%d\n", token_type_strings[tok.type], tok.data.num);
 	else
 		printf("%s\n", token_type_strings[tok.type]);
 

@@ -9,6 +9,7 @@
 #include"lexer.c"
 #include"parser.c"
 #include"walker.c"
+// program entry
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
 	struct astnode node = parser(fptr);

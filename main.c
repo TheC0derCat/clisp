@@ -100,10 +100,22 @@ void print_ast(struct astnode node, int indentation){
 		print_ast(*node.branch2, indentation + 1);
 	}
 }
+int walk(struct astnode node){
+	switch(node.tok.type){
+		case NUM: return node.tok.data.num;
+		case ADD: return walk(*node.branch1) + walk(*node.branch2);
+		case SUB: return walk(*node.branch1) - walk(*node.branch2);
+		case MUL: return walk(*node.branch1) * walk(*node.branch2);
+		case DIV: return walk(*node.branch1) / walk(*node.branch2);
+		default: puts("unexpected node");
+	}
+}
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
 	struct astnode node = parser(fptr);
 	print_ast(node, 0);
+	int result = walk(node);
+	printf("result: %d\n", result);
 	/*struct token tok = next_token(fptr);
 	while(tok.type < FILE_END){
 		if(tok.type == NUM)

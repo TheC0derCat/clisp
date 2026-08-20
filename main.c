@@ -43,7 +43,7 @@ struct token next_token(FILE *fptr){
 		}
 		buf[buf_len++] = '\0';
 		tok.data.num = atoi(buf);
-		fseek(fptr, -1, SEEK_CUR); // this decrements the file
+		fseek(fptr, -1, SEEK_CUR); // this decrements the file pointer
 		return tok;
 	}
 	switch(ch){
@@ -58,6 +58,12 @@ struct token next_token(FILE *fptr){
 	}
 	return tok;
 }
+struct astnode{
+	struct token tok;
+	struct astnode *branch1;
+	struct astnode *branch2;
+};
+struct astnode parser(FILE *fptr){}
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
 	struct token tok = next_token(fptr);

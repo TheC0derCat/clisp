@@ -1,131 +1,19 @@
+// external libs
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
 #include<ctype.h>
 #include<string.h>
-struct str_t{
-	char * ptr;
-	size_t len;
-	size_t cap;
-	bool is_slice;
-};
-const char* token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV","MOD","FILE_END"};
-enum token_type{
-	OPENING_PAREN,
-	CLOSING_PAREN,
-	NUM,
-	STR,
-	ADD,
-	SUB,
-	MUL,
-	DIV,
-	MOD,
-	FILE_END
-};
-union token_data{
-	int num;
-	struct str_t str; 
-};
-struct token{
-	enum token_type type;
-	union token_data data;
-	struct str_t origin;
-};
-void print_tok(struct token tok){
-	if(tok.type == NUM)
-		printf("%s: %d\n", token_type_strings[tok.type], tok.data.num);
-	else
-		printf("%s\n", token_type_strings[tok.type]);
-
-}
-struct token next_token(FILE *fptr){
-	struct token tok;
-	int ch = fgetc(fptr);
-	if(isdigit(ch)){
-		tok.type = NUM;
-		char buf[50];
-		int buf_len = 0;
-		while(isdigit(ch)){
-			buf[buf_len++] = ch;
-			ch = fgetc(fptr);
-		}
-		buf[buf_len++] = '\0';
-		tok.data.num = atoi(buf);
-		fseek(fptr, -1, SEEK_CUR); // this decrements the file pointer
-		return tok;
-	}
-	switch(ch){
-		case '(': tok.type = OPENING_PAREN; break;
-		case ')': tok.type = CLOSING_PAREN; break;
-		case '+': tok.type = ADD; break;
-		case '-': tok.type = SUB; break;
-		case '*': tok.type = MUL; break;
-		case '/': tok.type = DIV; break;
-		case '%': tok.type = MOD; break;
-		case EOF: tok.type = FILE_END; fclose(fptr); break;
-		default: tok = next_token(fptr);
-	}
-	return tok;
-}
-struct astnode{
-	struct token tok;
-	struct astnode *branch1;
-	struct astnode *branch2;
-};
-struct astnode parser(FILE *fptr){
-	struct astnode node;
-	node.tok = next_token(fptr);
-	node.branch1 = NULL;
-	node.branch2 = NULL;
-	if(node.tok.type == OPENING_PAREN){
-		node.tok = next_token(fptr);
-		node.branch1 = malloc(sizeof(struct astnode));
-		node.branch2 = malloc(sizeof(struct astnode));
-		*node.branch1 = parser(fptr);
-		*node.branch2 = parser(fptr);
-		struct token last = next_token(fptr);
-		if(last.type != CLOSING_PAREN){
-			puts("enexpected token");
-			print_tok(last);
-			exit(0);
-		}
-	}
-	return node;
-}
-void print_ast(struct astnode node, int indentation){
-	for(int i = 0; i < indentation; i++){
-		printf("\t");
-	}
-	print_tok(node.tok);
-	if(node.branch1 != NULL){
-		print_ast(*node.branch1, indentation + 1);
-		print_ast(*node.branch2, indentation + 1);
-	}
-}
-int walk(struct astnode node){
-	switch(node.tok.type){
-		case NUM: return node.tok.data.num;
-		case ADD: return walk(*node.branch1) + walk(*node.branch2);
-		case SUB: return walk(*node.branch1) - walk(*node.branch2);
-		case MUL: return walk(*node.branch1) * walk(*node.branch2);
-		case DIV: return walk(*node.branch1) / walk(*node.branch2);
-		case MOD: return walk(*node.branch1) % walk(*node.branch2);
-		default: puts("unexpected node");
-	}
-}
+// internal files
+#include"str.c"
+#include"lexer.c"
+#include"parser.c"
+#include"walker.c"
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
 	struct astnode node = parser(fptr);
 	print_ast(node, 0);
 	int result = walk(node);
 	printf("result: %d\n", result);
-	/*struct token tok = next_token(fptr);
-	while(tok.type < FILE_END){
-		if(tok.type == NUM)
-			printf("%s: %d\n", token_type_strings[tok.type], tok.data.num);
-		else
-			printf("%s\n", token_type_strings[tok.type]);
-		tok = next_token(fptr);
-	}*/
 	return 0;
 }

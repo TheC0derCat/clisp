@@ -20,8 +20,7 @@ enum token_type{
 	FILE_END
 };
 union token_data{
-	int num;
-	struct str_t str; 
+	int num; struct str_t str; 
 };
 struct token{
 	enum token_type type;
@@ -30,11 +29,7 @@ struct token{
 };
 struct token next_token(FILE *fptr){
 	struct token tok;
-	char ch;
-	if((ch = fgetc(fptr)) == EOF){
-		tok.type = FILE_END;
-		return tok;
-	}
+	int ch = fgetc(fptr);
 	switch(ch){
 		case '(': tok.type = OPENING_PAREN; break;
 		case ')': tok.type = CLOSING_PAREN; break;
@@ -42,14 +37,15 @@ struct token next_token(FILE *fptr){
 		case '-': tok.type = SUB; break;
 		case '*': tok.type = MUL; break;
 		case '/': tok.type = DIV; break;
+		case EOF: tok.type = FILE_END; break;
+		default: tok = next_token(fptr);
 	}
 	return tok;
 }
 int main(int argc, char *argv[]){
 	FILE *fptr = fopen(argv[1], "r");
-	struct token tok;
-	tok = next_token(fptr);
-	while(tok.type != FILE_END){
+	struct token tok = next_token(fptr);
+	while(tok.type < FILE_END){
 		printf("%s\n", token_type_strings[tok.type]);
 		tok = next_token(fptr);
 	}

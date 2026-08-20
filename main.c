@@ -43,6 +43,7 @@ struct token next_token(FILE *fptr){
 		}
 		buf[buf_len++] = '\0';
 		tok.data.num = atoi(buf);
+		fseek(fptr, -1, SEEK_CUR); // this decrements the file
 		return tok;
 	}
 	switch(ch){

@@ -3,21 +3,17 @@ struct astnode{
 	struct astnode *branchs;
 	int branch_count;
 };
-struct astnode parser(FILE *fptr){
+struct astnode parser(struct lexer_state *lex){
 	struct astnode node;
-	node.tok = next_token(fptr);
+	node.tok = next_token(lex);
 	node.branchs = NULL;
 	node.branch_count = 0;
 	if(node.tok.type == OPENING_PAREN){
-		node.tok = next_token(fptr);
-		node.branchs = malloc(2 * sizeof(struct astnode));
-		node.branchs[0] = parser(fptr);
-		node.branchs[1] = parser(fptr);
-		struct token last = next_token(fptr);
-		if(last.type != CLOSING_PAREN){
-			printf("enexpected token: ");
-			print_tok(last);
-			exit(0);
+		node.tok = next_token(lex);
+		node.branchs = malloc(1 * sizeof(struct astnode));
+		for(int i = 0; lex->last.type != CLOSING_PAREN; i++){
+			node.branchs = realloc(node.branchs, (i+1) * sizeof(struct astnode));
+			node.branchs[i] = parser(lex);
 		}
 	}
 	return node;

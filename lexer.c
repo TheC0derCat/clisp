@@ -20,6 +20,11 @@ struct token{
 	union token_data data;
 	struct str_t origin;
 };
+struct lexer_state{
+	FILE *fptr;
+	int line;
+	struct token last;
+};
 void print_tok(struct token tok){
 	if(tok.type == NUM)
 		printf("%s%d\n", token_type_strings[tok.type], tok.data.num);
@@ -27,20 +32,21 @@ void print_tok(struct token tok){
 		printf("%s\n", token_type_strings[tok.type]);
 
 }
-struct token next_token(FILE *fptr){
+struct token next_token(struct lexer_state *lex){
 	struct token tok;
-	int ch = fgetc(fptr);
+	int ch = fgetc(lex->fptr);
 	if(isdigit(ch)){
 		tok.type = NUM;
 		char buf[50];
 		int buf_len = 0;
 		while(isdigit(ch)){
 			buf[buf_len++] = ch;
-			ch = fgetc(fptr);
+			ch = fgetc(lex->fptr);
 		}
 		buf[buf_len++] = '\0';
 		tok.data.num = atoi(buf);
-		fseek(fptr, -1, SEEK_CUR); // this decrements the file pointer
+		fseek(lex->fptr, -1, SEEK_CUR); // this decrements the file pointer
+		lex->last = tok;
 		return tok;
 	}
 	switch(ch){
@@ -51,8 +57,9 @@ struct token next_token(FILE *fptr){
 		case '*': tok.type = MUL; break;
 		case '/': tok.type = DIV; break;
 		case '%': tok.type = MOD; break;
-		case EOF: tok.type = FILE_END; fclose(fptr); break;
-		default: tok = next_token(fptr);
+		case EOF: tok.type = FILE_END; fclose(lex->fptr); break;
+		default: tok = next_token(lex);
 	}
+	lex->last = tok;
 	return tok;
 }

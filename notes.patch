@@ -1,0 +1,280 @@
+diff --git a/.gitignore b/.gitignore
+index 845cda6..13f3114 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -53,3 +53,6 @@ dkms.conf
+ 
+ # debug information files
+ *.dwo
++
++# program
++clisp
+diff --git a/Makefile b/Makefile
+index 1c1a458..a5c1d73 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,3 +1,13 @@
+-main: main.c
+-	gcc main.c -fsanitize=undefined
+-	./a.out example
++
++OBJS := main.o \
++	lexer.o \
++	parser.o \
++	walker.o
++
++all: clisp
++
++clisp: $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $^ $(LIBFLAGS) $(LDLIBS)
++
++clean:
++	rm -f clisp $(OBJS)
+diff --git a/lexer.c b/lexer.c
+index 70ba40e..f5380d5 100644
+--- a/lexer.c
++++ b/lexer.c
+@@ -1,32 +1,20 @@
+-const char* token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV","MOD","FILE_END"};
+-enum token_type{
+-	OPENING_PAREN,
+-	CLOSING_PAREN,
+-	NUM,
+-	STR,
+-	ADD,
+-	SUB,
+-	MUL,
+-	DIV,
+-	MOD,
+-	FILE_END
+-};
+-union token_data{
+-	int num;
+-	struct str_t str; 
+-};
+-struct token{
+-	enum token_type type;
+-	union token_data data;
+-	struct str_t origin;
+-};
++#include <stdlib.h>
++#include <ctype.h>
++
++#include "lexer.h"
++
++// NOTE: use a const pointer, see parser.c and parser.h for details
+ void print_tok(struct token tok){
+ 	if(tok.type == NUM)
+ 		printf("%s%d\n", token_type_strings[tok.type], tok.data.num);
+ 	else
+ 		printf("%s\n", token_type_strings[tok.type]);
+-
+ }
++
++// NOTE: it actually does make sense to return struct token here, so I would keep it.
++// However, a more conventional C method would be something like
++// void next_token(FILE *fptr, struct token *out) { ... }
++// but this works well.
+ struct token next_token(FILE *fptr){
+ 	struct token tok;
+ 	int ch = fgetc(fptr);
+@@ -34,10 +22,14 @@ struct token next_token(FILE *fptr){
+ 		tok.type = NUM;
+ 		char buf[50];
+ 		int buf_len = 0;
++		// NOTE: what happens if this iteration runs over 50 times (beyond length of buf)?
++		// you need to think about the possibility of buffer overflows when writing code like this in C.
+ 		while(isdigit(ch)){
+ 			buf[buf_len++] = ch;
+ 			ch = fgetc(fptr);
+ 		}
++		// NOTE: this ++ is unnecessary.
++		// buf[buf_len] = '\0';
+ 		buf[buf_len++] = '\0';
+ 		tok.data.num = atoi(buf);
+ 		fseek(fptr, -1, SEEK_CUR); // this decrements the file pointer
+diff --git a/lexer.h b/lexer.h
+new file mode 100644
+index 0000000..14a997c
+--- /dev/null
++++ b/lexer.h
+@@ -0,0 +1,39 @@
++#ifndef _LEXER_H
++#define _LEXER_H
++
++#include <stdio.h>
++
++#include "str.h"
++
++// NOTE: potentially use X macros (https://en.wikipedia.org/wiki/X_macro)
++static const char *token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV","MOD","FILE_END"};
++
++enum token_type{
++	OPENING_PAREN,
++	CLOSING_PAREN,
++	NUM,
++	STR,
++	ADD,
++	SUB,
++	MUL,
++	DIV,
++	MOD,
++	FILE_END
++};
++
++union token_data{
++	int num;
++	struct str_t str; 
++};
++
++struct token{
++	enum token_type type;
++	union token_data data;
++	struct str_t origin;
++};
++
++void print_tok(struct token tok);
++
++struct token next_token(FILE *fptr);
++
++#endif /* _LEXER_H */
+\ No newline at end of file
+diff --git a/main.c b/main.c
+index f14ab1e..cbe10c1 100644
+--- a/main.c
++++ b/main.c
+@@ -1,17 +1,19 @@
+ // external libs
+ #include<stdio.h>
+-#include<stdlib.h>
+-#include<stdbool.h>
+-#include<ctype.h>
+-#include<string.h>
+-// internal files
+-#include"str.c"
+-#include"lexer.c"
+-#include"parser.c"
+-#include"walker.c"
++
++// internal headers
++#include "parser.h"
++#include "walker.h"
++
+ // program entry
+ int main(int argc, char *argv[]){
++	// NOTE: always check argc before grabbing from argv index 1 or greater. i.e add the following
++	// if (argc < 0) {
++	//     fprintf(stderr, "USAGE: %s <PROGRAM>\n", argv[0]);
++	//     return 0;
++	// }
+ 	FILE *fptr = fopen(argv[1], "r");
++	// NOTE: why is this not a pointer? see parser.c
+ 	struct astnode node = parser(fptr);
+ 	print_ast(node, 0);
+ 	int result = walk(node);
+diff --git a/parser.c b/parser.c
+index a16fb55..b836bb0 100644
+--- a/parser.c
++++ b/parser.c
+@@ -1,9 +1,14 @@
+-struct astnode{
+-	struct token tok;
+-	struct astnode *branch1;
+-	struct astnode *branch2;
+-};
++#include <stdio.h>
++#include <stdlib.h>
++
++#include "parser.h"
++
++// NOTE: when using a node for a tree like this, normally we would always work with pointers.
++// do this, and do not forget to update parser.h to match.
++// struct astnode *parser(FILE *fptr)
+ struct astnode parser(FILE *fptr){
++	// NOTE: then change this to
++	// struct astnode *node = malloc(sizeof(struct astnode));
+ 	struct astnode node;
+ 	node.tok = next_token(fptr);
+ 	node.branch1 = NULL;
+@@ -23,6 +28,11 @@ struct astnode parser(FILE *fptr){
+ 	}
+ 	return node;
+ }
++
++// NOTE: take a pointer here.
++// this prevents from wasting time copying all of the data.
++// there are some times where you will want to copy an entire struct, but just to print it, I would take a const pointer.
++// void print_ast(const struct astnode *node, int indentation) {...}
+ void print_ast(struct astnode node, int indentation){
+ 	for(int i = 0; i < indentation; i++){
+ 		printf("\t");
+diff --git a/parser.h b/parser.h
+new file mode 100644
+index 0000000..1ff7e5f
+--- /dev/null
++++ b/parser.h
+@@ -0,0 +1,20 @@
++#ifndef _PARSER_H
++#define _PARSER_H
++
++#include "lexer.h"
++
++// NOTE: will not be flexible enough for a real lisp in the long term
++// use an S-expression (https://en.wikipedia.org/wiki/S-expression)
++struct astnode{
++	struct token tok;
++	struct astnode *branch1;
++	struct astnode *branch2;
++};
++
++// NOTE: see parser.c
++struct astnode parser(FILE *fptr);
++
++// NOTE: see parser.c
++void print_ast(struct astnode node, int indentation);
++
++#endif /* _PARSER_H */
+\ No newline at end of file
+diff --git a/str.c b/str.h
+similarity index 63%
+rename from str.c
+rename to str.h
+index 6e5bef8..e0156a2 100644
+--- a/str.c
++++ b/str.h
+@@ -1,3 +1,6 @@
++#include <stddef.h>
++#include <stdbool.h>
++
+ struct str_t{
+ 	char * ptr;
+ 	size_t len;
+diff --git a/walker.c b/walker.c
+index 164c6cd..e1b8ceb 100644
+--- a/walker.c
++++ b/walker.c
+@@ -1,3 +1,8 @@
++#include "walker.h"
++
++// NOTE: similar problem to the files in parser.c. this should ideally take a const pointer.
++// as always be sure to update the header file, walker.h.
++// int walk(const struct astnode *node) { ... }
+ int walk(struct astnode node){
+ 	switch(node.tok.type){
+ 		case NUM: return node.tok.data.num;
+diff --git a/walker.h b/walker.h
+new file mode 100644
+index 0000000..0c62631
+--- /dev/null
++++ b/walker.h
+@@ -0,0 +1,9 @@
++#ifndef _WALKER_H
++#define _WALKER_H
++
++#include "parser.h"
++
++// NOTE: see walker.c
++int walk(struct astnode node);
++
++#endif /* _WALKER_H */
+\ No newline at end of file

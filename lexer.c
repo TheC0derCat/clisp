@@ -11,12 +11,18 @@ enum token_type{
 	MOD,
 	FILE_END
 };
+enum token_category{
+	OPERATOR,
+	LITTERAL,
+	OTHER
+};
 union token_data{
 	int num;
 	struct str_t str; 
 };
 struct token{
 	enum token_type type;
+	enum token_category category;
 	union token_data data;
 	struct str_t origin;
 };
@@ -45,6 +51,7 @@ struct token next_token(struct lexer_state *lex){
 		}
 		buf[buf_len++] = '\0';
 		tok.data.num = atoi(buf);
+		tok.category = LITTERAL;
 		fseek(lex->fptr, -1, SEEK_CUR); // this decrements the file pointer
 		lex->last = tok;
 		return tok;
@@ -52,11 +59,11 @@ struct token next_token(struct lexer_state *lex){
 	switch(ch){
 		case '(': tok.type = OPENING_PAREN; break;
 		case ')': tok.type = CLOSING_PAREN; break;
-		case '+': tok.type = ADD; break;
-		case '-': tok.type = SUB; break;
-		case '*': tok.type = MUL; break;
-		case '/': tok.type = DIV; break;
-		case '%': tok.type = MOD; break;
+		case '+': tok.type = ADD; tok.category = LITTERAL; break;
+		case '-': tok.type = SUB; tok.category = LITTERAL; break;
+		case '*': tok.type = MUL; tok.category = LITTERAL; break;
+		case '/': tok.type = DIV; tok.category = LITTERAL; break;
+		case '%': tok.type = MOD; tok.category = LITTERAL; break;
 		case EOF: tok.type = FILE_END; fclose(lex->fptr); break;
 		default: tok = next_token(lex);
 	}

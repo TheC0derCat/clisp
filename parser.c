@@ -11,9 +11,11 @@ struct astnode parser(struct lexer_state *lex){
 	if(node.tok.type == OPENING_PAREN){
 		node.tok = next_token(lex);
 		node.branchs = malloc(1 * sizeof(struct astnode));
-		for(node.branch_count = 0; lex->last.type != CLOSING_PAREN; node.branch_count++){
+		for(node.branch_count = 0; true; node.branch_count++){
 			node.branchs = realloc(node.branchs, (node.branch_count+1) * sizeof(struct astnode));
 			node.branchs[node.branch_count] = parser(lex);
+			if(node.branchs[node.branch_count].tok.type == CLOSING_PAREN)
+				break;
 		}
 	}
 	return node;

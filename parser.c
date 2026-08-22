@@ -26,7 +26,7 @@ void print_ast(struct astnode node, int indentation){
 	}
 	print_tok(node.tok);
 	if(node.branchs != NULL){
-		print_ast(node.branchs[0], indentation + 1);
-		print_ast(node.branchs[1], indentation + 1);
+		for(int i = 0; i < node.branch_count; i++)
+			print_ast(node.branchs[i], indentation + 1);
 	}
 }

@@ -24,7 +24,7 @@ int walk(struct astnode node){
 			  for(int i = 1; i < node.branch_count; i++){
 				  int thing = walk(node.branchs[i]); 
 				  if(thing == 0){
-					  puts("you cant divide by zero you silly goober");
+					  fprintf(stderr, "you cant divide by zero you silly goober\n");
 					  exit(1);
 				  }
 				  value /= thing; 
@@ -33,12 +33,4 @@ int walk(struct astnode node){
 		default: puts("unexpected node");
 	}
 	return value;
-	/*switch(node.tok.type){
-		case NUM: return node.tok.data.num;
-		case ADD: return walk(node.branchs[0]) + walk(node.branchs[1]);
-		case SUB: return walk(node.branchs[0]) - walk(node.branchs[1]);
-		case MUL: return walk(node.branchs[0]) * walk(node.branchs[1]);
-		case DIV: return walk(node.branchs[0]) / walk(node.branchs[1]);
-		default: puts("unexpected node");
-	}*/
 }

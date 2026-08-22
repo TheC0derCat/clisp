@@ -1,4 +1,4 @@
-const char* token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV","MOD","FILE_END"};
+const char* token_type_strings[] = {"OPENING_PAREN","CLOSING_PAREN","NUM","STR","ADD","SUB","MUL","DIV","MOD","AND","OR","NOT","FILE_END"};
 enum token_type{
 	OPENING_PAREN,
 	CLOSING_PAREN,
@@ -9,6 +9,9 @@ enum token_type{
 	MUL,
 	DIV,
 	MOD,
+	AND,
+	OR,
+	NOT,
 	FILE_END
 };
 enum token_category{
@@ -59,11 +62,14 @@ struct token next_token(struct lexer_state *lex){
 	switch(ch){
 		case '(': tok.type = OPENING_PAREN; break;
 		case ')': tok.type = CLOSING_PAREN; break;
-		case '+': tok.type = ADD; tok.category = LITTERAL; break;
-		case '-': tok.type = SUB; tok.category = LITTERAL; break;
-		case '*': tok.type = MUL; tok.category = LITTERAL; break;
-		case '/': tok.type = DIV; tok.category = LITTERAL; break;
-		case '%': tok.type = MOD; tok.category = LITTERAL; break;
+		case '+': tok.type = ADD; tok.category = OPERATOR; break;
+		case '-': tok.type = SUB; tok.category = OPERATOR; break;
+		case '*': tok.type = MUL; tok.category = OPERATOR; break;
+		case '/': tok.type = DIV; tok.category = OPERATOR; break;
+		case '%': tok.type = MOD; tok.category = OPERATOR; break;
+		case '&': tok.type = AND; tok.category = OPERATOR; break;
+		case '|': tok.type = OR; tok.category = OPERATOR; break;
+		case '!': tok.type = NOT; tok.category = OPERATOR; break;
 		case EOF: tok.type = FILE_END; fclose(lex->fptr); break;
 		default: tok = next_token(lex);
 	}

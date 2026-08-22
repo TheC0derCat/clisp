@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
 	lex.fptr = fptr;
 	struct astnode node = parser(&lex);
 	print_ast(node, 0);
-	int result = walk(node);
+	int result = walk(node).data.num;
 	printf("result: %d\n", result);
 	return 0;
 }
